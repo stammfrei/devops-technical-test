@@ -31,14 +31,12 @@ function build-packer-hw() {
 		log i "Initialize packer"
 		packer init "$hw_folder"
 
-		log i "Validating packer files"
-		packer validate "$hw_folder"
-
-		log i "Build packer output"
-		packer build "$hw_folder/docker-hello-world.pkr.hcl"
+		log i "Validating and building packer files"
+		packer validate "$hw_folder" &&
+			packer build "$hw_folder/docker-hello-world.pkr.hcl"
 	} || {
 		err_code="$?"
-		log e "failed to buld image"
+		log e "failed to build image"
 		cd "${project_root}" || exit_failed 1 "Failed to go back to project root '${project_root}'"
 		return "$err_code"
 	}
@@ -57,7 +55,8 @@ function build-loop-packer-hw() {
 # Test the hello world image
 function test-hw-img() {
 	log i "Testing the hello world image content"
-	docker run --rm -it "packer-hello-world:$(git rev-parse --short HEAD)" "pwd && ls -liahs && cat hello.txt"
+	docker run --rm -it "packer-hello-world:$(git rev-parse --short HEAD)" \
+		"pwd && ls -liahs && cat hello.txt && ls -liahs /app"
 }
 
 # Run the hello world image
