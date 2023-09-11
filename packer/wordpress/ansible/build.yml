@@ -6,7 +6,10 @@
 
   vars:
     ansible_python_interpreter: "{{ ansible_playbook_python }}"
-    tag: "6.3.1"
+    wordpress_version: "6.3.1"
+    wordpress_user: "wp"
+    wordpress_workdir: "/var/www/html"
+    wordpress_logdir: "/var/wp/logs"
 
   tasks:
     # Install dependencies
@@ -19,16 +22,58 @@
       ansible.builtin.apt:
         name:
           - git
+          - php-fpm
         state: present
+
+    - name: "Ensure {{ wordpress_workdir }} folder is created"
+      ansible.builtin.file:
+        path: "{{ wordpress_workdir }}"
+        state: directory
+        mode: "0750"
 
     - name: "Clone wordpress git repository"
       ansible.builtin.git:
         clone: true
         repo: git://core.git.wordpress.org/
-        dest: "/var/wp"
-        version: "{{ tag }}"
+        dest: "{{ wordpress_workdir }}"
+        version: "{{ wordpress_version }}"
         single_branch: true
         depth: 1
         force: true
-    # Download and install wordpress
-    # Install php
+
+    - name: "Template the base wp-config.php file"
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/templates/wp-config.php.j2"
+        dest: "{{ wordpress_workdir }}/wp-config.php"
+
+    - name: "Create the wordpress user"
+      ansible.builtin.user:
+        name: "{{ wordpress_user }}"
+        create_home: false
+        system: true
+
+    - name: "Ensure the {{ wordpress_workdir }} has permissions set for {{ wordpress_user }}"
+      ansible.builtin.file:
+        path: "{{ wordpress_workdir }}"
+        recurse: true
+        owner: "{{ wordpress_user }}"
+
+    - name: "Create the remaining required folders for {{ wordpress_user }} user"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        owner: "{{ wordpress_user }}"
+        mode: "0700"
+      loop:
+        - "{{ wordpress_logdir }}"
+
+    - name: "Clean useless apt packages"
+      ansible.builtin.apt:
+        name:
+          - ansible
+          - git
+        state: absent
+        purge: true
+
+    - name: "Remove useless dependencies"
+      ansible.builtin.apt:
+        autoremove: true
