@@ -38,6 +38,6 @@
     in
     {
       packages.${system} = { };
-      devShell.${system} = import ./ci/devshell.nix { inherit pkgs; };
+      devShell.${system} = import ./ci/devshell.nix { inherit unstable pkgs; };
     };
 }

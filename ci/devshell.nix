@@ -9,6 +9,8 @@ pkgs.mkShell {
 
       # -- Tools
       _1password# Secret management with 1password
+
+      ansible# to get easy access to ansible-doc cli
       ;
 
     inherit (unstable)
