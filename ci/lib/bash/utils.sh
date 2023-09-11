@@ -47,3 +47,24 @@ log() {
 	esac
 	echo 1>&2 "${level}: ${msg}"
 }
+
+# Exit with <code> and <msg>
+function exit_failed() {
+	code=${1:-"1"}
+	msg=${1:-"script $0 failed unexpectedly"}
+
+	echo 1>&2 "$msg"
+	exit "$code"
+}
+
+# Check that requireds [<bin>] are in $PATH
+function requires() {
+	bins=${*:?Please provide one or more binarie to check}
+
+	for bin in $bins; do
+		test -n "$(which "$bin")" || {
+			log e "${bin} is required for this script and not in path"
+			exit 1
+		}
+	done
+}

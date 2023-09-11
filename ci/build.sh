@@ -9,8 +9,11 @@ test -d .git || exit_failed 1 "You must execute this file from project root"
 # Import the local common stuff
 source ./ci/lib/bash/utils.sh
 
+# --- Hello world example
 # Build the hello world example
 function build-packer-hw() {
+	requires "packer" "git"
+
 	# Go back to project root at end of execution, the var must expand now
 	project_root="${PWD}"
 
@@ -46,6 +49,8 @@ function build-packer-hw() {
 
 # Trigger build on file change for the hello world example
 function build-loop-packer-hw() {
+	requires "docker"
+
 	hw_folder="packer/hello-world"
 
 	find "$hw_folder" -type f |
@@ -54,6 +59,8 @@ function build-loop-packer-hw() {
 
 # Test the hello world image
 function test-hw-img() {
+	requires "docker"
+
 	log i "Testing the hello world image content"
 	docker run --rm -it "packer-hello-world:$(git rev-parse --short HEAD)" \
 		"pwd && ls -liahs && cat hello.txt && ls -liahs /app"
