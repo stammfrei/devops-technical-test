@@ -18,9 +18,19 @@ variable "tag" {
   type = string
 }
 
+variable "wordpress_version" {
+  type    = string
+  default = "6.3.1"
+}
+
+variable "php_version" {
+  type    = string
+  default = "8.3"
+}
+
 // source a container
 source "docker" "python" {
-  image  = "python:3.11.5"
+  image  = "debian:bookworm"
   commit = true
   changes = [
     "ENTRYPOINT ${jsonencode(["/bin/bash", "-c"])}"
@@ -37,6 +47,11 @@ build {
     scripts = [
       "packer/wordpress/scripts/install-ansible.sh"
     ]
+  }
+
+  provisioner "ansible-local" {
+    playbook_file = "./packer/wordpress/ansible/build.yml"
+    command       = "/opt/ansible.sh"
   }
 
   post-processor "docker-tag" {

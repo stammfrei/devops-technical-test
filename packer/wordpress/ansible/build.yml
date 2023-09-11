@@ -1,0 +1,34 @@
+- hosts: 127.0.0.1
+  connection: local
+
+  become: false
+  gather_facts: false
+
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+    tag: "6.3.1"
+
+  tasks:
+    # Install dependencies
+    - name: "Update cache and upgrade packages"
+      ansible.builtin.apt:
+        update-cache: true
+        upgrade: true
+
+    - name: "Install requirements for wordpress install"
+      ansible.builtin.apt:
+        name:
+          - git
+        state: present
+
+    - name: "Clone wordpress git repository"
+      ansible.builtin.git:
+        clone: true
+        repo: git://core.git.wordpress.org/
+        dest: "/var/wp"
+        version: "{{ tag }}"
+        single_branch: true
+        depth: 1
+        force: true
+    # Download and install wordpress
+    # Install php

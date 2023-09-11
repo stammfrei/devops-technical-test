@@ -127,7 +127,7 @@ function test-wp() {
 
 	log i "Testing the wordpress image content"
 	docker run --rm -it "wordpress:$(git rev-parse --short HEAD)" \
-		"cd /opt && source ansible/bin/activate && ansible --help"
+		"test -x /opt/ansible.sh"
 }
 
 # Run the hello world image
