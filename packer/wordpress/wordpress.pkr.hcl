@@ -14,10 +14,6 @@ packer {
   }
 }
 
-variable "tag" {
-  type = string
-}
-
 variable "wordpress_version" {
   type    = string
   default = "6.3.1"
@@ -94,6 +90,6 @@ build {
 
   post-processor "docker-tag" {
     repository = "wordpress"
-    tags       = [var.tag]
+    tags       = [var.wordpress_version]
   }
 }

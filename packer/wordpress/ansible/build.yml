@@ -61,6 +61,7 @@
     - name: "Create the remaining required folders for {{ wordpress_user }} user"
       ansible.builtin.file:
         path: "{{ item }}"
+        state: directory
         owner: "{{ wordpress_user }}"
         mode: "0700"
       loop:
