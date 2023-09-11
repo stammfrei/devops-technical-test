@@ -14,15 +14,19 @@ variable "tag" {
   type = string
 }
 
+// source a container
 source "docker" "ubuntu" {
   image  = "ubuntu:22.04"
   commit = true
+  changes = [
+    "ENTRYPOINT ${jsonencode(["/bin/bash", "-c"])}"
+  ]
 }
 
 build {
   name = "hello-world"
   sources = [
-    "source.docker.ubuntu"
+    "source.docker.ubuntu",
   ]
 
   provisioner "shell" {
@@ -33,7 +37,13 @@ build {
     inline = [
       "echo 1>&2 Adding file to container",
       "echo \"Hello $NAME\" > hello.txt",
+      "mkdir -p /app",
     ]
+  }
+
+  provisioner "file" {
+    source      = "./ci/build.sh"
+    destination = "/app/build.sh"
   }
 
   post-processor "docker-tag" {
