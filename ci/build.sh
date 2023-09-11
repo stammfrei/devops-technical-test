@@ -11,30 +11,39 @@ source ./ci/lib/bash/utils.sh
 
 # Build the hello world example
 function build-packer-hw() {
-	trap "cd ${PWD}" EXIT SIGINT # Go back to project root at end of execution
+	# Go back to project root at end of execution, the var must expand now
+	project_root="${PWD}"
 
 	tag=${1:-"emptytag"}
 	hw_folder="packer/hello-world"
 
 	# If explicit tag is not provided, use commit sha
 	if [ "$tag" == "emptytag" ]; then
-		echo 1>&2 "Using git sha as tag"
+		log i "Using git sha as tag"
 		sha=$(git rev-parse --short HEAD)
 		tag=$sha
 	fi
 
-	(
-		packer init "$hw_folder" &&
-			echo 2>&1 "Validating packer files" &&
-			packer validate \
-				-var "tag=${tag}" "$hw_folder" &&
-			echo 2>&1 "Build packer output" &&
-			packer build \
-				-var "tag=${tag}" "$hw_folder/docker-hello-world.pkr.hcl"
-	) ||
-		exit_failed 1 "failed to build image"
+	# Export packer dynamic vars
+	export PKR_VAR_tag="$tag"
 
-	exit 0
+	{
+		log i "Initialize packer"
+		packer init "$hw_folder"
+
+		log i "Validating packer files"
+		packer validate "$hw_folder"
+
+		log i "Build packer output"
+		packer build "$hw_folder/docker-hello-world.pkr.hcl"
+	} || {
+		err_code="$?"
+		log e "failed to buld image"
+		cd "${project_root}" || exit_failed 1 "Failed to go back to project root '${project_root}'"
+		return "$err_code"
+	}
+
+	cd "${project_root}" || exit_failed 1 "Failed to go back to project root '${project_root}'"
 }
 
 # Trigger build on file change for the hello world example
@@ -42,12 +51,19 @@ function build-loop-packer-hw() {
 	hw_folder="packer/hello-world"
 
 	find "$hw_folder" -type f |
-		entr -cs "./ci/build.sh build-packer-hw"
+		SHELL=bash entr -cs "./ci/build.sh build-packer-hw && ./ci/build.sh test-hw-img"
 }
 
 # Test the hello world image
 function test-hw-img() {
-	docker run -it
+	log i "Testing the hello world image content"
+	docker run --rm -it "packer-hello-world:$(git rev-parse --short HEAD)" "pwd && ls -liahs && cat hello.txt"
+}
+
+# Run the hello world image
+function run-hw-img() {
+	log i "Running the hello world image"
+	docker run --rm -it "packer-hello-world:$(git rev-parse --short HEAD)" bash
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -60,20 +76,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 	-h | --help)
 		echo "# Requirements"
 		echo "----------"
-		echo "GITLAB_TOKEN env var must be set."
 		echo
 		echo "# Commands"
 		echo "----------"
-		echo
-		echo "Start a build: "
-		echo "$0 build"
-		echo
-		echo "Start a build everytime a file in src is changed: "
-		echo "$0 build-loop"
-		echo
-		echo "Test a build:"
-		echo "$0 test"
-		echo
 		;;
 
 	*)
@@ -81,7 +86,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 		cmd=${1:?Please input a valid command, see help for usage}
 		shift
 		$cmd "$@"
-		echo pwd
 		exit $?
 		;;
 	esac
