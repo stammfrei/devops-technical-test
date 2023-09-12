@@ -9,7 +9,6 @@
     wordpress_version: "6.3.1"
     wordpress_user: "wp"
     wordpress_workdir: "/var/www/html"
-    wordpress_logdir: "/var/wp/logs"
 
   tasks:
     # Install dependencies
@@ -58,14 +57,21 @@
         recurse: true
         owner: "{{ wordpress_user }}"
 
-    - name: "Create the remaining required folders for {{ wordpress_user }} user"
-      ansible.builtin.file:
-        path: "{{ item }}"
-        state: directory
+    - name: "Template the php-fpm config"
+      template:
+        src: "{{ playbook_dir }}/templates/php-fpm.conf.j2"
+        dest: "/etc/php/8.2/fpm/php-fpm.conf"
         owner: "{{ wordpress_user }}"
-        mode: "0700"
-      loop:
-        - "{{ wordpress_logdir }}"
+        group: "{{ wordpress_user }}"
+        mode: "0440"
+
+    - name: "Template the php.ini"
+      template:
+        src: "{{ playbook_dir }}/templates/php.ini.j2"
+        dest: "/etc/php/8.2/fpm/php.ini"
+        owner: "{{ wordpress_user }}"
+        group: "{{ wordpress_user }}"
+        mode: "0440"
 
     - name: "Clean useless apt packages"
       ansible.builtin.apt:

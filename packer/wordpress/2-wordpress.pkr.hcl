@@ -1,6 +1,6 @@
 // Install wordpress and dependencies with ansible
 source "docker" "base-ansible" {
-  image  = "base-ansible:${var.wordpress_version}"
+  image  = "base-ansible:${var.debian_version}"
   pull   = false
   commit = true
   changes = [
@@ -27,6 +27,7 @@ source "docker" "base-ansible" {
 
     "EXPOSE 9000",
     "ENTRYPOINT ${jsonencode(["/bin/bash", "-c"])}",
+    "CMD ${jsonencode(["php-fpm8.2"])}"
   ]
 }
 
