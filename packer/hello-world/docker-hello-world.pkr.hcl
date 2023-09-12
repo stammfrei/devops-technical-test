@@ -51,3 +51,36 @@ build {
     tags       = [var.tag]
   }
 }
+
+// source a container
+source "docker" "hello-world" {
+  image  = "packer-hello-world:${var.tag}"
+  pull   = false
+  commit = true
+  changes = [
+    "ENTRYPOINT ${jsonencode(["/bin/bash", "-c"])}"
+  ]
+}
+
+build {
+  name = "second-world"
+  sources = [
+    "source.docker.hello-world"
+  ]
+
+  provisioner "shell" {
+    environment_vars = [
+      "NAME=toto",
+    ]
+
+    inline = [
+      "echo 1>&2 Adding file to container",
+      "echo \"Hello tutitu\" >> hello.txt",
+    ]
+  }
+
+  post-processor "docker-tag" {
+    repository = "packer-second-world"
+    tags       = [var.tag]
+  }
+}

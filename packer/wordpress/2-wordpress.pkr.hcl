@@ -1,49 +1,13 @@
-// Build file for the wordpress container
-
-packer {
-  required_plugins {
-    docker = {
-      version = ">= 1.0.8"
-      source  = "github.com/hashicorp/docker"
-    }
-
-    ansible = {
-      source  = "github.com/hashicorp/ansible"
-      version = ">= 1.1.0"
-    }
-  }
-}
-
-variable "wordpress_version" {
-  type    = string
-  default = "6.3.1"
-}
-
-variable "wordpress_user" {
-  type        = string
-  description = "The username of the unix user in the wordpress container"
-  default     = "wp"
-}
-
-variable "wordpress_workdir" {
-  type        = string
-  description = "The wordpress directory inside the container"
-  default     = "/var/www/html"
-}
-
-variable "wordpress_logdir" {
-  type        = string
-  description = "The wordpress logs directory inside the container"
-  default     = "/var/log/wp"
-}
-
-// source a container
-source "docker" "python" {
-  image  = "debian:bookworm"
+// Install wordpress and dependencies with ansible
+source "docker" "base-ansible" {
+  image  = "base-ansible:${var.wordpress_version}"
+  pull   = false
   commit = true
   changes = [
     "USER ${var.wordpress_user}",
     "WORKDIR ${var.wordpress_workdir}",
+
+    // Declare all env var here for clarity
     "ENV WP_DB_NAME ''",
     "ENV WP_DB_USER ''",
     "ENV WP_DB_PASSWORD ''",
@@ -60,6 +24,7 @@ source "docker" "python" {
     "ENV WP_SECURE_AUTH_SALT ''",
     "ENV WP_LOGGED_IN_SALT ''",
     "ENV WP_NONCE_SALT ''",
+
     "EXPOSE 9000",
     "ENTRYPOINT ${jsonencode(["/bin/bash", "-c"])}",
   ]
@@ -68,14 +33,8 @@ source "docker" "python" {
 build {
   name = "wordpress"
   sources = [
-    "source.docker.python",
+    "source.docker.base-ansible",
   ]
-
-  provisioner "shell" {
-    scripts = [
-      "packer/wordpress/scripts/install-ansible.sh"
-    ]
-  }
 
   provisioner "ansible-local" {
     playbook_dir  = "./packer/wordpress/ansible"

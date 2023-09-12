@@ -67,3 +67,9 @@ function requires() {
 		}
 	done
 }
+
+# Check if docker image with <image:tag> exists
+function check_image() {
+	image=${1:?Please provide a docker image with 'image:tag' format}
+	docker images --format "{{.Repository}}:{{.Tag}}" | grep -ic "$image"
+}

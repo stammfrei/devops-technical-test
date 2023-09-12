@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-#
+
 # This script groups many "dev" commands for this projects
 # see each command comment for usage.
 
@@ -36,7 +36,8 @@ function build-packer-hw() {
 
 		log i "Validating and building packer files"
 		packer validate "$hw_folder" &&
-			packer build "$hw_folder/docker-hello-world.pkr.hcl"
+			packer build -only="hello-world.docker.ubuntu" "$hw_folder/docker-hello-world.pkr.hcl" &&
+			packer build -only="second-world.docker.hello-world" "$hw_folder/docker-hello-world.pkr.hcl"
 	} || {
 		err_code="$?"
 		log e "failed to build image"
@@ -100,8 +101,15 @@ function build-wp() {
 		packer init "$hw_folder"
 
 		log i "Validating and building packer files"
-		packer validate "$hw_folder" &&
-			packer build "$hw_folder/wordpress.pkr.hcl"
+		packer validate "$hw_folder"
+
+		if [ "${SKIP_BASE:-"false"}" == "false" ]; then
+			packer build -only="base-ansible.docker.debian" "$hw_folder"
+		else
+			log i "Skipped base image build"
+		fi
+
+		packer build -only="wordpress.docker.base-ansible" "$hw_folder"
 	} || {
 		err_code="$?"
 		log e "failed to build image"
@@ -118,7 +126,7 @@ function build-loop-wp() {
 	hw_folder="packer/wordpress"
 
 	find "$hw_folder" -type f |
-		SHELL=bash entr -cs "./ci/build.sh check &&./ci/build.sh build-wp && ./ci/build.sh test-wp"
+		SHELL=bash entr -cs "./ci/build.sh check && ./ci/build.sh build-wp && ./ci/build.sh test-wp"
 }
 
 # Test the hello world image
@@ -156,6 +164,7 @@ function check() {
 	shellcheck $ci_files $build_files
 }
 
+# Equivalent to `if __name__ == "__main__":` in python
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 	set -o errexit  # Interrompt le script en cas d'erreur
 	set -o errtrace # Interrompt le script en cas d'erreur dans une fonction ou un shell nesté
