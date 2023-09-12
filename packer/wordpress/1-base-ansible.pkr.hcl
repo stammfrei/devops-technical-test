@@ -21,6 +21,6 @@ build {
 
   post-processor "docker-tag" {
     repository = "base-ansible"
-    tags       = [var.wordpress_version]
+    tags       = [var.debian_version]
   }
 }
