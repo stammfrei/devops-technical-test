@@ -3,24 +3,26 @@ version: "3.8"
 
 services:
   wordpress:
-    image: "wordpress:6.3.1"
-    user: root
+    image: "test-wp:latest"
+    restart: "always"
+    ports:
+      - "8080:80"
     networks:
-      - wp
       - db
-    volumes:
-      - type: "bind"
-        source: "${PWD}/www"
-        target: "/var/www/html"
+    #volumes:
+    #  - type: "volume"
+    #    source: "wp"
+    #    target: "/var/www/html"
+    #  - type: "volume"
+    #    source: "apache"
+    #    target: "/etc/apache2"
+    # healthcheck:
+    #   test: [ "CMD", "apache2ctl", "configtest" ]
+    #   interval: 10s
+    #   timeout: 3s
+    #   retries: 10
+    #   start_period: 2s
     environment:
-      # WORDPRESS_DB_NAME: "${DATABASE_NAME}"
-      # WORDPRESS_DB_USER: "${DATABASE_USER}"
-      # WORDPRESS_DB_PASSWORD: "${DATABASE_PASSWORD}"
-      # WORDPRESS_DB_HOST: "mariadb"
-      # WORDPRESS_DB_CHARSET: "utf8"
-      # WORDPRESS_DB_COLLATE: ""
-      # WORDPRESS_TABLE_PREFIX: "wp_"
-      # WORDPRESS_DEBUG: "true"
       WP_DB_NAME: "${DATABASE_NAME}"
       WP_DB_USER: "${DATABASE_USER}"
       WP_DB_PASSWORD: "${DATABASE_PASSWORD}"
@@ -29,6 +31,10 @@ services:
       WP_DB_COLLATE: ""
       WP_TABLE_PREFIX: "wp_"
       WP_DEBUG: "true"
+      WP_CONTENT_PATH: "/wp-content"
+      WP_PLUGIN_PATH: "/wp-plugins"
+      WP_UPLOADS_PATH: "/wp-uploads"
+      WP_POST_REVISIONS: "true"
       # We let it empty, so wordpress will fill them
       # WP_AUTH_KEY: ""
       # WP_SECURE_AUTH_KEY: ""
@@ -38,27 +44,6 @@ services:
       # WP_SECURE_AUTH_SALT: ""
       # WP_LOGGED_IN_SALT: ""
       # WP_NONCE_SALT: ""
-
-      # I use nginx to server the static files
-      # since traefik don't support static files as far as I know
-  nginx:
-    image: "nginx"
-    user: root
-    networks:
-      - "wp"
-    environment:
-      WP_HOST: "wordpress"
-      WP_PORT: "9000"
-    ports:
-      - "8080:80"
-    volumes:
-      - type: "bind"
-        source: "${PWD}/nginx.conf"
-        target: "/etc/nginx/nginx.conf"
-        read_only: true
-      - type: "bind"
-        source: "${PWD}/www"
-        target: "/var/www/html"
 
   mariadb:
     image: "mariadb:11"
@@ -72,8 +57,8 @@ services:
 
 volumes:
   wp:
+  apache:
 
 
 networks:
-  wp:
   db:
