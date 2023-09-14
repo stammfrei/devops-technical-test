@@ -1,26 +1,28 @@
 ---
 version: "3.8"
 
+# this is a minimal local test that will work
+# with the default values in the build
+
 services:
   wordpress:
     image: "wordpress:6.3.1"
-    user: root
+    restart: "always"
+    entrypoint: [ "apache2" ]
+    command:
+      - -D
+      - FOREGROUND
     networks:
-      - wp
       - db
-    volumes:
-      - type: "bind"
-        source: "${PWD}/www"
-        target: "/var/www/html"
+    ports:
+      - "8080:80"
+    depends_on:
+      - mariadb
+    # volumes:
+    #   - type: "volume"
+    #     source: "wp_folder"
+    #     target: "/var/www/html"
     environment:
-      # WORDPRESS_DB_NAME: "${DATABASE_NAME}"
-      # WORDPRESS_DB_USER: "${DATABASE_USER}"
-      # WORDPRESS_DB_PASSWORD: "${DATABASE_PASSWORD}"
-      # WORDPRESS_DB_HOST: "mariadb"
-      # WORDPRESS_DB_CHARSET: "utf8"
-      # WORDPRESS_DB_COLLATE: ""
-      # WORDPRESS_TABLE_PREFIX: "wp_"
-      # WORDPRESS_DEBUG: "true"
       WP_DB_NAME: "${DATABASE_NAME}"
       WP_DB_USER: "${DATABASE_USER}"
       WP_DB_PASSWORD: "${DATABASE_PASSWORD}"
@@ -29,7 +31,11 @@ services:
       WP_DB_COLLATE: ""
       WP_TABLE_PREFIX: "wp_"
       WP_DEBUG: "true"
-      # We let it empty, so wordpress will fill them
+      WP_CONTENT_PATH: '/wp-content'
+      WP_PLUGIN_PATH: '/wp-content/plugins'
+      WP_UPLOADS_PATH: '/wp-uploads'
+      WP_POST_REVISIONS: 'true'
+      # We let it empty, so wordpress will fill it automatically
       # WP_AUTH_KEY: ""
       # WP_SECURE_AUTH_KEY: ""
       # WP_LOGGED_IN_KEY: ""
@@ -38,27 +44,6 @@ services:
       # WP_SECURE_AUTH_SALT: ""
       # WP_LOGGED_IN_SALT: ""
       # WP_NONCE_SALT: ""
-
-      # I use nginx to server the static files
-      # since traefik don't support static files as far as I know
-  nginx:
-    image: "nginx"
-    user: root
-    networks:
-      - "wp"
-    environment:
-      WP_HOST: "wordpress"
-      WP_PORT: "9000"
-    ports:
-      - "8080:80"
-    volumes:
-      - type: "bind"
-        source: "${PWD}/nginx.conf"
-        target: "/etc/nginx/nginx.conf"
-        read_only: true
-      - type: "bind"
-        source: "${PWD}/www"
-        target: "/var/www/html"
 
   mariadb:
     image: "mariadb:11"
@@ -71,9 +56,10 @@ services:
       MARIADB_PASSWORD: "${DATABASE_PASSWORD}"
 
 volumes:
-  wp:
+  wp_folder:
+  wp_apache_etc:
+  wp_apache_logs:
 
 
 networks:
-  wp:
   db:

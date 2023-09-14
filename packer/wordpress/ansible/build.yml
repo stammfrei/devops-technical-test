@@ -1,17 +1,21 @@
 - hosts: 127.0.0.1
-  connection: local
+  connection: "local"
 
   become: false
   gather_facts: false
 
   vars:
     ansible_python_interpreter: "{{ ansible_playbook_python }}"
-    wordpress_version: "6.3.1"
-    wordpress_user: "wp"
-    wordpress_workdir: "/var/www/html"
 
   tasks:
-    # Install dependencies
+    # assert now to avoid failed build later
+    - name: "Check required variables for this build"
+      assert:
+        that:
+          - wordpress_version is defined
+          - wordpress_workdir is defined
+          - wordpress_log_dir is defined
+
     - name: "Update cache and upgrade packages"
       ansible.builtin.apt:
         update-cache: true
@@ -20,67 +24,90 @@
     - name: "Install requirements for wordpress install"
       ansible.builtin.apt:
         name:
-          - git
-          - php-fpm
-        state: present
+          - "git"
+          - "php"
+          - "php-mysql"
+          - "apache2"
+        state: "present"
 
-    - name: "Ensure {{ wordpress_workdir }} folder is created"
+    # Since the default value is /var/www/html and apache2 installation
+    # create the folder, it can causes errors with git module.
+    - name: "Ensure the {{ wordpress_workdir }} does not exists for git clone"
       ansible.builtin.file:
         path: "{{ wordpress_workdir }}"
-        state: directory
-        mode: "0750"
+        state: "absent"
 
     - name: "Clone wordpress git repository"
       ansible.builtin.git:
         clone: true
-        repo: git://core.git.wordpress.org/
+        repo: "git://core.git.wordpress.org/"
         dest: "{{ wordpress_workdir }}"
         version: "{{ wordpress_version }}"
         single_branch: true
         depth: 1
         force: true
 
-    - name: "Template the base wp-config.php file"
-      ansible.builtin.template:
-        src: "{{ playbook_dir }}/templates/wp-config.php.j2"
-        dest: "{{ wordpress_workdir }}/wp-config.php"
+    - name: "Delete useless .git folder in wordpress workdir"
+      ansible.builtin.file:
+        path: "{{ wordpress_workdir }}/.git"
+        state: "absent"
 
-    - name: "Create the wordpress user"
-      ansible.builtin.user:
-        name: "{{ wordpress_user }}"
-        create_home: false
-        system: true
-
-    - name: "Ensure the {{ wordpress_workdir }} has permissions set for {{ wordpress_user }}"
+    - name: "Ensure {{ wordpress_workdir }} folder has correct permissions"
       ansible.builtin.file:
         path: "{{ wordpress_workdir }}"
+        state: directory
+        owner: "www-data"
+        group: "www-data"
+        mode: "0750"
+
+    - name: "Template all the required configuration files"
+      ansible.builtin.template:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: "www-data"
+        group: "www-data"
+        mode: "0640"
+      loop:
+        - src: "{{ playbook_dir }}/templates/wp-config.php.j2"
+          dest: "{{ wordpress_workdir }}/wp-config.php"
+        - src: "{{ playbook_dir }}/templates/apache2.conf.j2"
+          dest: "/etc/apache2/apache2.conf"
+        - src: "{{ playbook_dir }}/templates/php.ini.j2"
+          dest: "/etc/php/8.2/apache2/conf.d/php.ini"
+
+    - name: "Create required folders and ensure correct permission"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: "directory"
+        owner: "www-data"
+        group: "www-data"
+        mode: "0751"
         recurse: true
-        owner: "{{ wordpress_user }}"
+      loop:
+        - "{{ wordpress_workdir }}"
+        - "{{ wordpress_log_dir }}"
+        - "/var/lib/apache2"
+        - "/var/lib/apache2/run"
+        - "/var/log/apache2"
 
-    - name: "Template the php-fpm config"
-      template:
-        src: "{{ playbook_dir }}/templates/php-fpm.conf.j2"
-        dest: "/etc/php/8.2/fpm/php-fpm.conf"
-        owner: "{{ wordpress_user }}"
-        group: "{{ wordpress_user }}"
-        mode: "0440"
-
-    - name: "Template the php.ini"
-      template:
-        src: "{{ playbook_dir }}/templates/php.ini.j2"
-        dest: "/etc/php/8.2/fpm/php.ini"
-        owner: "{{ wordpress_user }}"
-        group: "{{ wordpress_user }}"
-        mode: "0440"
-
-    - name: "Clean useless apt packages"
-      ansible.builtin.apt:
-        name:
-          - ansible
-          - git
-        state: absent
-        purge: true
-
+    # --- Cleanup and trim image
     - name: "Remove useless dependencies"
       ansible.builtin.apt:
         autoremove: true
+
+    - name: Remove useless packages from the cache
+      ansible.builtin.apt:
+        autoclean: true
+
+    - name: Run a 'apt-clean'
+      ansible.builtin.apt:
+        clean: true
+
+    # Be wary of making it the last task, since we uninstall ansible
+    - name: "Clean useless apt packages, including"
+      ansible.builtin.apt:
+        name:
+          - "ansible"
+          - "git"
+        state: "absent"
+        purge: true
