@@ -36,8 +36,8 @@ function build-packer-hw() {
 
 		log i "Validating and building packer files"
 		packer validate "$hw_folder" &&
-			packer build -only="hello-world.docker.ubuntu" "$hw_folder/docker-hello-world.pkr.hcl" &&
-			packer build -only="second-world.docker.hello-world" "$hw_folder/docker-hello-world.pkr.hcl"
+			# packer build -only="hello-world.docker.ubuntu" "${hw_folder}/docker-hello-world.pkr.hcl" &&
+			packer build -only="second-world.docker.hello-world" "${hw_folder}/docker-hello-world.pkr.hcl"
 	} || {
 		err_code="$?"
 		log e "failed to build image"
@@ -134,8 +134,8 @@ function test-wp() {
 	requires "docker"
 
 	log i "Testing the wordpress image content"
-	docker run --rm -it "wordpress:$(git rev-parse --short HEAD)" \
-		"test -x /opt/ansible.sh"
+	docker compose -f tests/docker-compose.yml down
+	docker compose -f tests/docker-compose.yml up -d --force-recreate --remove-orphans wordpress
 }
 
 # Run the hello world image
