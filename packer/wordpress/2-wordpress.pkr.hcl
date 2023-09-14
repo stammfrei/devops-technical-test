@@ -4,10 +4,8 @@ source "docker" "base-ansible" {
   pull   = false
   commit = true
   changes = [
-    "USER ${var.wordpress_user}",
-    "WORKDIR ${var.wordpress_workdir}",
-
     // Declare all env var here for clarity
+    // Wordpress env config
     "ENV WP_DB_NAME ''",
     "ENV WP_DB_USER ''",
     "ENV WP_DB_PASSWORD ''",
@@ -24,10 +22,20 @@ source "docker" "base-ansible" {
     "ENV WP_SECURE_AUTH_SALT ''",
     "ENV WP_LOGGED_IN_SALT ''",
     "ENV WP_NONCE_SALT ''",
+    "ENV WP_CONTENT_PATH '/wp-content'",
+    "ENV WP_PLUGIN_PATH '/wp-content/plugins'",
+    "ENV WP_UPLOADS_PATH '/wp-uploads'",
+    "ENV WP_POST_REVISIONS 'true'",
 
-    "EXPOSE 9000",
-    "ENTRYPOINT ${jsonencode(["/bin/bash", "-c"])}",
-    "CMD ${jsonencode(["php-fpm8.2"])}"
+    "EXPOSE 80",
+
+    "HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 CMD ${jsonencode(["apache2ctl", "configtest"])}",
+
+    "USER www-data",
+    "WORKDIR ${var.wordpress_workdir}",
+
+    "ENTRYPOINT ${jsonencode(["apache2"])}",
+    "CMD ${jsonencode(["-D", "FOREGROUND"])}",
   ]
 }
 
@@ -41,10 +49,9 @@ build {
     playbook_dir  = "./packer/wordpress/ansible"
     playbook_file = "./packer/wordpress/ansible/build.yml"
     extra_arguments = [
-      "--extra-vars", "wordpress_user=${var.wordpress_user}",
       "--extra-vars", "wordpress_workdir=${var.wordpress_workdir}",
       "--extra-vars", "wordpress_version=${var.wordpress_version}",
-      "--extra-vars", "wordpress_logdir=${var.wordpress_logdir}",
+      "--extra-vars", "wordpress_log_dir=${var.wordpress_log_dir}",
     ]
   }
 
