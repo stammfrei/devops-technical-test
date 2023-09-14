@@ -22,19 +22,13 @@ variable "wordpress_version" {
   default = "6.3.1"
 }
 
-variable "wordpress_user" {
-  type        = string
-  description = "The username of the unix user in the wordpress container"
-  default     = "wp"
-}
-
 variable "wordpress_workdir" {
   type        = string
   description = "The wordpress directory inside the container"
   default     = "/var/www/html"
 }
 
-variable "wordpress_logdir" {
+variable "wordpress_log_dir" {
   type        = string
   description = "The wordpress logs directory inside the container"
   default     = "/var/log/wp"
