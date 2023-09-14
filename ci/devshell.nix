@@ -19,6 +19,8 @@ pkgs.mkShell {
       packer
 
       entr# for automatic save > execute feedback loop
+
+      awscli2
       ;
   };
 
