@@ -56,7 +56,7 @@ build {
   }
 
   post-processor "docker-tag" {
-    repository = "wordpress"
+    repository = "wordpress-debian-${var.debian_version}"
     tags       = [var.wordpress_version]
   }
 }
