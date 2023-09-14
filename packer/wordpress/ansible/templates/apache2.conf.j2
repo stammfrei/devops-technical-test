@@ -1,0 +1,75 @@
+# Global configuration
+#
+
+# Logs
+LogLevel notice
+
+CustomLog "/dev/stdout" vhost_combined
+LogFormat "apache2: %v:%p %h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" vhost_combined
+LogFormat "%h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" combined
+LogFormat "%h %l %u %t \"%r\" %>s %O" common
+LogFormat "%{Referer}i -> %U" referer
+LogFormat "%{User-agent}i" agent
+
+ErrorLog "/dev/stderr"
+ErrorLogFormat "apache2: [%t] [%l] [pid %P] %F: %E: [client %a] %M"
+
+# Apache directories
+ServerRoot /var/lib/apache2
+
+DefaultRuntimeDir /var/lib/apache2/run
+
+# PidFile
+PidFile run/apache2.pid
+
+# Include module configuration:
+IncludeOptional /etc/apache2/mods-enabled/*.load
+IncludeOptional /etc/apache2/mods-enabled/*.conf
+
+
+# PidFile: The file in which the server should record its process
+
+Timeout 300
+KeepAlive On
+MaxKeepAliveRequests 100
+KeepAliveTimeout 5
+HostnameLookups Off
+
+# These need to be set in /etc/apache2/envvars
+User www-data
+Group www-data
+
+DirectoryIndex disabled
+DirectoryIndex index.php index.html
+
+Listen 80
+
+<FilesMatch \.php$>
+	SetHandler application/x-httpd-php
+</FilesMatch>
+
+<Directory />
+        Options FollowSymLinks
+        AllowOverride None
+        Require all denied
+</Directory>
+
+<Directory {{ wordpress_workdir }}>
+        Options FollowSymLinks
+        AllowOverride None
+        Options -Indexes
+        Require all granted
+</Directory>
+
+AccessFileName .htaccess
+
+# The following lines prevent .htaccess and .htpasswd files from being
+# viewed by Web clients.
+<FilesMatch "^\.ht">
+        Require all denied
+</FilesMatch>
+
+ServerName localhost
+<VirtualHost *:80>
+    DocumentRoot {{ wordpress_workdir }}
+</VirtualHost>
