@@ -7,11 +7,45 @@ packer {
       version = ">= 1.0.8"
       source  = "github.com/hashicorp/docker"
     }
+    amazon = {
+      source  = "github.com/hashicorp/amazon"
+      version = "~> 1"
+    }
   }
 }
 
 variable "tag" {
   type = string
+}
+
+
+variable "use_aws_ecr" {
+  type        = bool
+  description = "Do you use aws ecr ?"
+  default     = false
+}
+
+variable "repository_url" {
+  type        = string
+  description = "The image repository to use"
+  default     = ""
+}
+
+variable "registry_url" {
+  type        = string
+  description = "A valid aws ect url for pushing your image"
+}
+
+variable "registry_username" {
+  type        = string
+  description = "username for ecr login"
+  default     = "AWS"
+}
+
+variable "registry_password" {
+  type        = string
+  description = "Registry password"
+  sensitive   = true
 }
 
 // source a container
@@ -39,11 +73,6 @@ build {
       "echo \"Hello $NAME\" > hello.txt",
       "mkdir -p /app",
     ]
-  }
-
-  provisioner "file" {
-    source      = "./ci/build.sh"
-    destination = "/app/build.sh"
   }
 
   post-processor "docker-tag" {
@@ -80,7 +109,12 @@ build {
   }
 
   post-processor "docker-tag" {
-    repository = "packer-second-world"
+    repository = "${var.repository_url}/packer-second-world"
     tags       = [var.tag]
+  }
+
+  post-processor "docker-push" {
+    ecr_login    = true
+    login_server = var.registry_url
   }
 }

@@ -164,13 +164,6 @@ function check() {
 	shellcheck $ci_files $build_files
 }
 
-# -- AWS manual test helpers
-function registry-login() {
-	docker login -u "$(op read "op://TechTest/Amazon_BuildUser/")" \
-		-p "$(op read "op://TechTest/Amazon_BuildUser/password")" \
-		359550916290.dkr.ecr.eu-north-1.amazonaws.com/test
-}
-
 # Equivalent to `if __name__ == "__main__":` in python
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 	set -o errexit  # Interrompt le script en cas d'erreur
