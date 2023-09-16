@@ -146,6 +146,14 @@ function run-wp() {
 	docker run --rm -it "wordpress:$(git rev-parse --short HEAD)" bash
 }
 
+# --- Terraform
+# Execute terraform plan on each filechange
+function tf-loop-plan() {
+	module=${1:?Please provide a valid terraform module dir (registry/ecs)}
+	find terraform -name "*.tf" |
+		entr -cs "terraform -chdir=terraform/${module} plan"
+}
+
 # --- utils
 # lint and format files
 function check() {

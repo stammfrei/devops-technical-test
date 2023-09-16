@@ -10,7 +10,6 @@ packer {
       version = ">= 1.1.0"
     }
 
-
     amazon = { // for aws credential management
       source  = "github.com/hashicorp/amazon"
       version = "~> 1"
@@ -40,12 +39,6 @@ variable "wordpress_log_dir" {
   default     = "/var/log/wp"
 }
 
-variable "use_aws_ecr" {
-  type        = bool
-  description = "Do you use aws ecr ?"
-  default     = false
-}
-
 variable "repository_url" {
   type        = string
   description = "The image repository to use"
@@ -55,16 +48,4 @@ variable "repository_url" {
 variable "registry_url" {
   type        = string
   description = "A valid aws ect url for pushing your image"
-}
-
-variable "registry_username" {
-  type        = string
-  description = "username for ecr login"
-  default     = "AWS"
-}
-
-variable "registry_password" {
-  type        = string
-  description = "Registry password"
-  sensitive   = true
 }

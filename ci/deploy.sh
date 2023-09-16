@@ -14,7 +14,7 @@ function deploy-registry() {
 	requires terraform
 
 	TF_AUTO_APPROVE=${TF_AUTO_APPROVE:-"false"}
-	if [ "$TF_AUTO_APPROVE" ]; then
+	if [ "$TF_AUTO_APPROVE" == "true" ]; then
 		auto_approve="-auto-approve"
 	fi
 
@@ -36,28 +36,34 @@ function build-push-image() {
 
 	tfcmd="terraform -chdir=terraform/registry"
 	log i "retrieving registry login informations form terraform"
-	PKR_VAR_use_aws_ecr="true"
-	PKR_VAR_registry_username=$(strip-quotes "$($tfcmd output -json registry_username)")
-	PKR_VAR_registry_password=$(strip-quotes "$($tfcmd output -json registry_password)")
-	PKR_VAR_registry_url=$(strip-quotes "$($tfcmd output -json registry_url)")
-	PKR_VAR_repository_url=$(strip-quotes "$($tfcmd output -json repository_url)")
-	PKR_VAR_tag="toto"
-	packer_folder="packer/hello-world"
+	packer_folder="packer/wordpress"
 
-	export PKR_VAR_use_aws_ecr
-	export PKR_VAR_registry_url
-	export PKR_VAR_registry_username
-	export PKR_VAR_registry_password
-	export PKR_VAR_repository_url
-	export PKR_VAR_tag
-
-	env | grep PKR_VAR
 	log i "initialize and validate packer configuration"
 	packer init "$packer_folder"
-	packer validate "$packer_folder"
 
 	log i "build and push packer image"
-	packer build "$packer_folder"
+	PKR_VAR_registry_url=$(strip-quotes "$($tfcmd output -json registry_url)")
+	export PKR_VAR_registry_url
+
+	PKR_VAR_repository_url=$(strip-quotes "$($tfcmd output -json repository_url)")
+	export PKR_VAR_repository_url
+
+	export PKR_VAR_tag="toto"
+
+	packer validate "$packer_folder"
+	if [ "${SKIP_BASE:-"false"}" == "false" ]; then
+		packer build -only="base-ansible.docker.debian" "$packer_folder"
+	else
+		log i "Skipped base image build"
+	fi
+
+	packer build -only="wordpress.docker.base-ansible" "$packer_folder"
+}
+
+function main() {
+	# TF_AUTO_APPROVE="true" deploy-registry
+	export SKIP_BASE="true"
+	build-push-image
 }
 
 # --- utils

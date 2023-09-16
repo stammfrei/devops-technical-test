@@ -31,11 +31,6 @@ variable "wordpress_image_name" {
   default = "wordpress-debian-bookworm"
 }
 
-variable "wordpress_image_tag" {
-  type    = string
-  default = "6.3.1"
-}
-
 resource "aws_ecr_repository" "registry" {
   name                 = "wp-registry"
   image_tag_mutability = "MUTABLE" // I use a mutable one since I will not manage versions
@@ -48,16 +43,6 @@ data "aws_ecr_authorization_token" "registry_token" {
 output "registry_url" {
   value     = data.aws_ecr_authorization_token.registry_token.proxy_endpoint
   sensitive = false
-}
-
-output "registry_username" {
-  value     = data.aws_ecr_authorization_token.registry_token.user_name
-  sensitive = false
-}
-
-output "registry_password" {
-  value     = data.aws_ecr_authorization_token.registry_token.password
-  sensitive = true
 }
 
 output "repository_url" {

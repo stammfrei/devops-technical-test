@@ -18,34 +18,14 @@ variable "tag" {
   type = string
 }
 
-
-variable "use_aws_ecr" {
-  type        = bool
-  description = "Do you use aws ecr ?"
-  default     = false
-}
-
 variable "repository_url" {
   type        = string
-  description = "The image repository to use"
-  default     = ""
+  description = "The image repository to use, it includes the image name"
 }
 
 variable "registry_url" {
   type        = string
   description = "A valid aws ect url for pushing your image"
-}
-
-variable "registry_username" {
-  type        = string
-  description = "username for ecr login"
-  default     = "AWS"
-}
-
-variable "registry_password" {
-  type        = string
-  description = "Registry password"
-  sensitive   = true
 }
 
 // source a container
@@ -70,51 +50,19 @@ build {
 
     inline = [
       "echo 1>&2 Adding file to container",
-      "echo \"Hello $NAME\" > hello.txt",
-      "mkdir -p /app",
-    ]
-  }
-
-  post-processor "docker-tag" {
-    repository = "packer-hello-world"
-    tags       = [var.tag]
-  }
-}
-
-// source a container
-source "docker" "hello-world" {
-  image  = "packer-hello-world:${var.tag}"
-  pull   = false
-  commit = true
-  changes = [
-    "ENTRYPOINT ${jsonencode(["/bin/bash", "-c"])}"
-  ]
-}
-
-build {
-  name = "second-world"
-  sources = [
-    "source.docker.hello-world"
-  ]
-
-  provisioner "shell" {
-    environment_vars = [
-      "NAME=toto",
-    ]
-
-    inline = [
-      "echo 1>&2 Adding file to container",
       "echo \"Hello tutitu\" >> hello.txt",
     ]
   }
 
-  post-processor "docker-tag" {
-    repository = "${var.repository_url}/packer-second-world"
-    tags       = [var.tag]
-  }
+  post-processors {
+    post-processor "docker-tag" {
+      repository = var.repository_url
+      tags       = [var.tag]
+    }
 
-  post-processor "docker-push" {
-    ecr_login    = true
-    login_server = var.registry_url
+    post-processor "docker-push" {
+      ecr_login    = true
+      login_server = var.registry_url
+    }
   }
 }

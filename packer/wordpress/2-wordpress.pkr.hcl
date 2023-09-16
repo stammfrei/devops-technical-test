@@ -55,8 +55,19 @@ build {
     ]
   }
 
-  post-processor "docker-tag" {
-    repository = "wordpress-debian-${var.debian_version}"
-    tags       = [var.wordpress_version]
+  post-processors {
+    post-processor "docker-tag" {
+      repository = var.repository_url
+      tags = [
+        "latest",
+        var.wordpress_version,
+        "${var.debian_version}-${var.wordpress_version}",
+      ]
+    }
+
+    post-processor "docker-push" {
+      ecr_login    = true
+      login_server = var.repository_url
+    }
   }
 }
