@@ -63,3 +63,7 @@ variable "db_password" {
   sensitive   = true
 }
 
+locals {
+  container_name = "wordpress"
+}
+

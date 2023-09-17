@@ -1,7 +1,3 @@
-locals {
-  container_name = "whoami"
-}
-
 // Cluster creation
 resource "aws_ecs_cluster" "wordpress" {
   name = "wp-cluster-${var.environment}"
@@ -48,16 +44,6 @@ resource "aws_kms_key" "wordpress" {
 
 resource "aws_cloudwatch_log_group" "wordpress" {
   name = "wordpress-cloudwatch-${var.environment}"
-}
-
-data "aws_iam_policy_document" "ecs_task_assume_policy" {
-  statement {
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "Service"
-      identifiers = ["ecs-tasks.amazonaws.com"]
-    }
-  }
 }
 
 resource "aws_iam_role" "wordpress_task_role" {
@@ -118,10 +104,9 @@ resource "aws_ecs_task_definition" "wordpress" {
   memory                   = 2048
   task_role_arn            = aws_iam_role.wordpress_task_role.arn
   execution_role_arn       = aws_iam_role.wordpress_task_role.arn
-  //execution_role_arn       = data.aws_iam_role.ecs_task_execution_role.arn
   container_definitions = jsonencode([
     {
-      name      = "wordpress"
+      name      = local.container_name
       image     = var.image
       essential = true
       environment = [
@@ -130,13 +115,12 @@ resource "aws_ecs_task_definition" "wordpress" {
         },
         { name  = "WP_DB_USER"
           value = var.db_username
-          // WP_DB_PASSWORD = var.db_password
         },
         { name  = "WP_DB_PASSWORD"
-          value = "azjdhalzjdhazlk"
+          value = var.db_password
         },
         { name  = "WP_DB_HOST"
-          value = aws_db_instance.wordpress.endpoint
+          value = aws_db_instance.wordpress.address
         },
       ]
       portMappings = [
@@ -167,13 +151,21 @@ resource "aws_ecs_service" "wordpress" {
 
   launch_type = "FARGATE"
 
-  //load_balancer {
-  //  container_name   = local.container_name
-  //  container_port   = 80
-  //  target_group_arn = var.target_group_arn
-  //}
+  load_balancer {
+    container_name   = local.container_name
+    container_port   = 8080
+    target_group_arn = aws_lb_target_group.wordpress.arn
+  }
+
+  force_new_deployment   = true
+  enable_execute_command = true
+
   network_configuration {
-    subnets          = ["subnet-015db62ffaa5e5240"]
+    security_groups = [aws_security_group.ecs_wordpress.id]
+    subnets = [
+      aws_subnet.wordpress_main_subnet.id,
+      aws_subnet.wordpress_secondary_subnet.id,
+    ]
     assign_public_ip = true
   }
 }
