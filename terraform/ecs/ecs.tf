@@ -73,6 +73,8 @@ resource "aws_iam_role" "wordpress_task_role" {
           Service = [
             "ec2.amazonaws.com",
             "ecs.amazonaws.com",
+            "ecs-tasks.amazonaws.com",
+            "lambda.amazonaws.com",
             "ecr.amazonaws.com",
           ]
         }
@@ -122,12 +124,37 @@ resource "aws_ecs_task_definition" "wordpress" {
       name      = "wordpress"
       image     = var.image
       essential = true
+      environment = [
+        { name  = "WP_DB_NAME"
+          value = local.db_name
+        },
+        { name  = "WP_DB_USER"
+          value = var.db_username
+          // WP_DB_PASSWORD = var.db_password
+        },
+        { name  = "WP_DB_PASSWORD"
+          value = "azjdhalzjdhazlk"
+        },
+        { name  = "WP_DB_HOST"
+          value = aws_db_instance.wordpress.endpoint
+        },
+      ]
       portMappings = [
         {
-          containerPort = 80
-          hostPort      = 80
+          containerPort = 8080
+          hostPort      = 8080
         }
       ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.wordpress.name,
+          awslogs-region        = "eu-west-3",
+          awslogs-stream-prefix = "awslogs-wordpress-${var.environment}"
+        }
+      }
     }
   ])
 }
@@ -140,9 +167,13 @@ resource "aws_ecs_service" "wordpress" {
 
   launch_type = "FARGATE"
 
+  //load_balancer {
+  //  container_name   = local.container_name
+  //  container_port   = 80
+  //  target_group_arn = var.target_group_arn
+  //}
   network_configuration {
-    subnets          = [aws_subnet.wordpress_main_subnet.id]
-    security_groups  = [aws_security_group.ecs_wordpress.id]
+    subnets          = ["subnet-015db62ffaa5e5240"]
     assign_public_ip = true
   }
 }

@@ -26,10 +26,9 @@ source "docker" "base-ansible" {
     "ENV WP_PLUGIN_PATH '/wp-content/plugins'",
     "ENV WP_UPLOADS_PATH '/wp-uploads'",
     "ENV WP_POST_REVISIONS 'true'",
+    "ENV WORDPRESS_URL 'localhost'",
 
-    "EXPOSE 80",
-
-    "HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 CMD ${jsonencode(["apache2ctl", "configtest"])}",
+    "EXPOSE 8080",
 
     "USER www-data",
     "WORKDIR ${var.wordpress_workdir}",

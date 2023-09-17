@@ -42,8 +42,7 @@ Group www-data
 DirectoryIndex disabled
 DirectoryIndex index.php index.html
 
-Listen 80
-
+Listen 8080
 <FilesMatch \.php$>
 	SetHandler application/x-httpd-php
 </FilesMatch>
@@ -69,7 +68,7 @@ AccessFileName .htaccess
         Require all denied
 </FilesMatch>
 
-ServerName localhost
-<VirtualHost *:80>
+ServerName {WORDPRESS_URL}
+<VirtualHost *:8080>
     DocumentRoot {{ wordpress_workdir }}
 </VirtualHost>
