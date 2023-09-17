@@ -109,6 +109,14 @@ resource "aws_ecs_task_definition" "wordpress" {
       name      = local.container_name
       image     = var.image
       essential = true
+
+      mountPoints = [
+        {
+          sourceVolume  = "wp-content"
+          containerPath = "/var/www/html"
+        }
+      ]
+
       environment = [
         { name  = "WP_DB_NAME"
           value = local.db_name
@@ -123,6 +131,7 @@ resource "aws_ecs_task_definition" "wordpress" {
           value = aws_db_instance.wordpress.address
         },
       ]
+
       portMappings = [
         {
           containerPort = 8080
@@ -141,6 +150,36 @@ resource "aws_ecs_task_definition" "wordpress" {
       }
     }
   ])
+
+  volume {
+    name = "wp-content"
+    efs_volume_configuration {
+      file_system_id = aws_efs_file_system.wp_content.id
+      //root_directory          = "/var/www/html"
+      transit_encryption      = "ENABLED"
+      transit_encryption_port = 2999
+
+      authorization_config {
+        access_point_id = aws_efs_access_point.wp_content.id
+      }
+    }
+  }
+
+}
+
+resource "aws_efs_file_system" "wp_content" {
+  tags = {
+    Name = "wp-content-${var.environment}"
+  }
+}
+
+resource "aws_efs_access_point" "wp_content" {
+  file_system_id = aws_efs_file_system.wp_content.id
+
+  posix_user {
+    uid = "33" // www-data uid
+    gid = "33"
+  }
 }
 
 resource "aws_ecs_service" "wordpress" {
