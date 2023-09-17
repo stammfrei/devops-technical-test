@@ -8,11 +8,22 @@ resource "aws_vpc" "ecs_wordpress" {
 }
 
 resource "aws_subnet" "wordpress_main_subnet" {
-  vpc_id     = aws_vpc.ecs_wordpress.id
-  cidr_block = var.main_subnet_cidr
+  vpc_id            = aws_vpc.ecs_wordpress.id
+  cidr_block        = var.main_subnet_cidr
+  availability_zone = "eu-west-3a"
 
   tags = {
     Name = "ecs-wordpress-${var.environment}-main-subnet"
+  }
+}
+
+resource "aws_subnet" "wordpress_secondary_subnet" {
+  vpc_id            = aws_vpc.ecs_wordpress.id
+  cidr_block        = "192.168.2.0/24"
+  availability_zone = "eu-west-3b"
+
+  tags = {
+    Name = "ecs-wordpress-${var.environment}-secondary-subnet"
   }
 }
 
@@ -35,6 +46,13 @@ resource "aws_security_group" "ecs_wordpress" {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress { // allow incoming traffik
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 

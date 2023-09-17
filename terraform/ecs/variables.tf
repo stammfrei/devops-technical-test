@@ -19,14 +19,18 @@ variable "main_subnet_cidr" {
 variable "image" {
   type        = string
   description = "The wordpress image to deploy"
-  # default     = "359550916290.dkr.ecr.eu-west-3.amazonaws.com/wp-registry:6.3.1"
-  default = "traefik/whoami:latest"
+  default     = "359550916290.dkr.ecr.eu-west-3.amazonaws.com/wp-registry:6.3.1"
 }
 
 variable "db_allocated_storage" {
-  type        = int
-  default     = 2
+  type        = number
+  default     = 20
   description = "storage allocated to the database"
+
+  validation {
+    condition     = var.db_allocated_storage >= 20
+    error_message = "AWS RDS instances must have at least 20GB in storage"
+  }
 }
 
 variable "db_mysql_version" {

@@ -50,59 +50,62 @@ resource "aws_cloudwatch_log_group" "wordpress" {
   name = "wordpress-cloudwatch-${var.environment}"
 }
 
-resource "aws_iam_role" "wordpress" {
-  name = "wordpress-role"
+data "aws_iam_policy_document" "ecs_task_assume_policy" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["ecs-tasks.amazonaws.com"]
+    }
+  }
+}
 
-  assume_role_policy = jsonencode(
-    {
-      "Version" : "2012-10-17",
-      "Statement" : [
+resource "aws_iam_role" "wordpress_task_role" {
+  name = "wordpress-task-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = [
+            "ec2.amazonaws.com",
+            "ecs.amazonaws.com",
+            "ecr.amazonaws.com",
+          ]
+        }
+      },
+    ]
+  })
+
+  inline_policy {
+    name = "ecs-task-permissions"
+    policy = jsonencode({
+      Version = "2012-10-17"
+      Statement = [
         {
-          "Action" : "sts:AssumeRole",
-          "Effect" : "Allow",
-          "Sid" : ""
-          "Principal" : {
-            "Service" : [
-              "ecs.amazonaws.com",
-              "ecs-tasks.amazonaws.com",
-              "ecr.amazonaws.com",
-            ]
-          },
+          Action = [
+            "ecr:*",
+            "ecs:*",
+            "logs:*",
+            "ssm:*",
+            "kms:Decrypt",
+            "secretsmanager:GetSecretValue",
+            "iam:PassRole",
+          ]
+
+          Effect   = "Allow"
+          Resource = "*"
         }
       ]
-    }
-  )
-
-  managed_policy_arns = [aws_iam_policy.wordpress_role_allow_ecr.arn]
+    })
+  }
 
   tags = {
     managedBy = "terraform"
   }
-}
-
-resource "aws_iam_policy" "wordpress_role_allow_ecr" {
-  name = "wordpress-allow-ecr-ecs"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = [ // open bar permissions for now
-          "ecr:*",
-          "ecs:*",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents",
-          "sns:ListTopics",
-        ]
-        Effect   = "Allow"
-        Resource = "*"
-      },
-    ]
-  })
-}
-
-data "aws_iam_role" "ecs_task_execution_role" {
-  name = "ecsTaskExecutionRole"
 }
 
 resource "aws_ecs_task_definition" "wordpress" {
@@ -111,8 +114,9 @@ resource "aws_ecs_task_definition" "wordpress" {
   network_mode             = "awsvpc"
   cpu                      = 1024
   memory                   = 2048
-  task_role_arn            = aws_iam_role.wordpress.arn
-  execution_role_arn       = data.aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.wordpress_task_role.arn
+  execution_role_arn       = aws_iam_role.wordpress_task_role.arn
+  //execution_role_arn       = data.aws_iam_role.ecs_task_execution_role.arn
   container_definitions = jsonencode([
     {
       name      = "wordpress"
