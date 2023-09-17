@@ -23,6 +23,20 @@ function deploy-registry() {
 	$tfcmd apply "${auto_approve:-}"
 }
 
+# Deploy the ecs cluster with terraform
+function deploy-ecs-cluster() {
+	requires terraform
+
+	TF_AUTO_APPROVE=${TF_AUTO_APPROVE:-"false"}
+	if [ "$TF_AUTO_APPROVE" == "true" ]; then
+		auto_approve="-auto-approve"
+	fi
+
+	log i "Starting terraform deploy"
+	tfcmd="terraform -chdir=terraform/ecs"
+	$tfcmd apply "${auto_approve:-}"
+}
+
 # Strip quotes injected by terraform output -json command
 function strip-quotes() {
 	var=${1:?Please input a string to parse}
@@ -62,8 +76,9 @@ function build-push-image() {
 
 function main() {
 	# TF_AUTO_APPROVE="true" deploy-registry
-	export SKIP_BASE="true"
-	build-push-image
+	# export SKIP_BASE="true"
+	# build-push-image
+	TF_AUTO_APPROVE="true" deploy-ecs-cluster
 }
 
 # --- utils
