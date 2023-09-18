@@ -89,7 +89,15 @@ TF_VAR_db_username
 TF_VAR_db_password
 ```
 
-4. Execute the deploy script :
+4. Configure the tf backend
+
+Either use the local backend or you can use [s3](https://aws.amazon.com/s3/), see
+the [registry](./registry.s3.tfbackend) and [ecs](./ecs.s3.tfbackend) example files
+and the [terraform docs](https://developer.hashicorp.com/terraform/language/settings/backends/s3).
+
+5. Execute the deploy script :
+
+> Note: All scripts must be executed from project root.
 
 - Using nix
 ```bash
@@ -107,6 +115,21 @@ docker compose run --rm nix-shell ./ci/deploy.sh
 
 ```bash
 export TF_AUTO_APPROVE="true"
+```
+
+#### Destroy infrastructure
+
+Just call the `./ci/deploy.sh destroy` script :
+
+- Using nix
+```bash
+nix develop --extra-experimental-features "nix-command flakes"
+./ci/deploy.sh destroy
+```
+
+- Using docker :
+```bash
+docker compose run --rm nix-shell destroy
 ```
 
 ---
