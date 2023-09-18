@@ -82,8 +82,6 @@ docker compose run --rm nix-shell <command>
 - [The registry file](./terraform/registry/registry.tf)
 - [The ecs variable file](./terraform/ecs/variables.tf)
 
-To manage wordpress first deployment see [first run](#first-run)
-
 The secrets must be provisioned via env vars, you need to provision :
 
 ```bash
@@ -96,6 +94,10 @@ AWS_DEFAULT_REGION
 TF_VAR_db_username
 TF_VAR_db_password
 ```
+
+If you are making the first deployment, set the `wp_folder_reset` variable to 
+`true` via the [ecs variables file](./terraform/ecs/variables.tf) or via the
+`TF_VAR_wordpress_folder_reset` var to provision the wp-content folder.
 
 4. Configure the tf backend and initialize terraform
 
@@ -128,6 +130,18 @@ docker compose run --rm nix-shell terraform -chdir=terraform/registry init -back
 5. Execute the deploy script :
 
 > Note: All scripts must be executed from project root.
+
+__In case of a first run :__
+
+For now, the wp-content folder must be initialized at first container deployment
+since EFS mount empties the /var/www/html folder.
+
+If you want to init this folder (or reset it) turn the `wp_folder_reset` var to 
+`true`. 
+
+> Be careful, this will reset your whole wp-folder.
+
+I didn't had the time to implement a wp folder provisioning from URL or git.
 
 - Using nix
 ```bash
@@ -176,18 +190,6 @@ nix develop --extra-experimental-features "nix-command flakes"
 ```bash
 docker compose run --rm nix-shell ./ci/deploy.sh -h
 ```
-
-### First run
-
-For now, the wp-content folder must be initialized at first container deployment
-since EFS mount empties the /var/www/html folder.
-
-If you want to init this folder (or reset it) turn the `wp_folder_reset` var to 
-`true`. 
-
-> Be careful, this will reset your whole wp-folder.
-
-I didn't had the time to implement a wp folder provisioning from URL or git.
 
 ---
 
