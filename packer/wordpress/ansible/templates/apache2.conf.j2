@@ -53,7 +53,7 @@ Listen 8080
         Require all denied
 </Directory>
 
-<Directory {{ wordpress_workdir }}>
+<Directory /var/www/html>
         Options FollowSymLinks
         AllowOverride None
         Options -Indexes
@@ -68,7 +68,7 @@ AccessFileName .htaccess
         Require all denied
 </FilesMatch>
 
-ServerName {WORDPRESS_URL}
+ServerName localhost
 <VirtualHost *:8080>
-    DocumentRoot {{ wordpress_workdir }}
+    DocumentRoot /var/www/html
 </VirtualHost>

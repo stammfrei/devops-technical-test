@@ -27,14 +27,15 @@ source "docker" "base-ansible" {
     "ENV WP_UPLOADS_PATH '/wp-uploads'",
     "ENV WP_POST_REVISIONS 'true'",
     "ENV WORDPRESS_URL 'localhost'",
+    "ENV WP_INIT_FOLDER 'false'",
+    "ENV WP_RESET_CONFIG 'false'",
 
     "EXPOSE 8080",
 
     "USER www-data",
     "WORKDIR ${var.wordpress_workdir}",
 
-    "ENTRYPOINT ${jsonencode(["apache2"])}",
-    "CMD ${jsonencode(["-D", "FOREGROUND"])}",
+    "ENTRYPOINT ${jsonencode(["/bin/entrypoint.sh"])}",
   ]
 }
 
