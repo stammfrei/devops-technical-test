@@ -89,7 +89,15 @@ TF_VAR_db_username
 TF_VAR_db_password
 ```
 
-4. Execute the deploy script :
+4. Configure the tf backend
+
+Either use the local backend or you can use [s3](https://aws.amazon.com/s3/), see
+the [registry](./registry.s3.tfbackend) and [ecs](./ecs.s3.tfbackend) example files
+and the [terraform docs](https://developer.hashicorp.com/terraform/language/settings/backends/s3).
+
+5. Execute the deploy script :
+
+> Note: All scripts must be executed from project root.
 
 - Using nix
 ```bash
@@ -107,6 +115,21 @@ docker compose run --rm nix-shell ./ci/deploy.sh
 
 ```bash
 export TF_AUTO_APPROVE="true"
+```
+
+#### Destroy infrastructure
+
+Just call the `./ci/deploy.sh destroy` script :
+
+- Using nix
+```bash
+nix develop --extra-experimental-features "nix-command flakes"
+./ci/deploy.sh destroy
+```
+
+- Using docker :
+```bash
+docker compose run --rm nix-shell destroy
 ```
 
 ---
@@ -209,8 +232,6 @@ things. I want them to work both on my environment (nix shell) and on the CI).
 I inject all the secrets via environment variables, the required ones are in the
 [.env](./.env) file. I use [1password](https://1password.com/) as my secret manager
 so I used `op run` to execute my scripts with the env var provisionned.
-
-TODO: Provide a container image to run the project.
 
 ### What component interact with each others ?
 
