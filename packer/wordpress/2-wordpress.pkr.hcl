@@ -26,16 +26,16 @@ source "docker" "base-ansible" {
     "ENV WP_PLUGIN_PATH '/wp-content/plugins'",
     "ENV WP_UPLOADS_PATH '/wp-uploads'",
     "ENV WP_POST_REVISIONS 'true'",
+    "ENV WORDPRESS_URL 'localhost'",
+    "ENV WP_INIT_FOLDER 'false'",
+    "ENV WP_RESET_CONFIG 'false'",
 
-    "EXPOSE 80",
-
-    "HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 CMD ${jsonencode(["apache2ctl", "configtest"])}",
+    "EXPOSE 8080",
 
     "USER www-data",
     "WORKDIR ${var.wordpress_workdir}",
 
-    "ENTRYPOINT ${jsonencode(["apache2"])}",
-    "CMD ${jsonencode(["-D", "FOREGROUND"])}",
+    "ENTRYPOINT ${jsonencode(["/bin/entrypoint.sh"])}",
   ]
 }
 
@@ -55,8 +55,19 @@ build {
     ]
   }
 
-  post-processor "docker-tag" {
-    repository = "wordpress"
-    tags       = [var.wordpress_version]
+  post-processors {
+    post-processor "docker-tag" {
+      repository = var.repository_url
+      tags = [
+        "latest",
+        var.wordpress_version,
+        "${var.debian_version}-${var.wordpress_version}",
+      ]
+    }
+
+    post-processor "docker-push" {
+      ecr_login    = true
+      login_server = var.repository_url
+    }
   }
 }

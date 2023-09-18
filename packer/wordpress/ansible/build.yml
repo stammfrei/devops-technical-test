@@ -41,24 +41,38 @@
       ansible.builtin.git:
         clone: true
         repo: "git://core.git.wordpress.org/"
-        dest: "{{ wordpress_workdir }}"
+        dest: "/var/wp/src"
         version: "{{ wordpress_version }}"
         single_branch: true
         depth: 1
         force: true
 
-    - name: "Delete useless .git folder in wordpress workdir"
+    - name: "Delete useless .git folder and readme in wordpress workdir"
       ansible.builtin.file:
-        path: "{{ wordpress_workdir }}/.git"
+        path: "/var/wp/src/.git"
         state: "absent"
+      loop:
+        - /var/wp/src/.git
+        - /var/wp/src/readme.html
 
-    - name: "Ensure {{ wordpress_workdir }} folder has correct permissions"
+    - name: "add healthcheck.html for faking healthcheck"
+      ansible.builtin.copy:
+        content: "OK"
+        dest: "/var/wp/src/healthcheck.html"
+        owner: "www-data"
+        group: "www-data"
+        mode: "440"
+
+    - name: "Ensure {{ wordpress_workdir }} and /var/wp/src folder has correct permissions"
       ansible.builtin.file:
-        path: "{{ wordpress_workdir }}"
+        path: "{{ item }}"
         state: directory
         owner: "www-data"
         group: "www-data"
         mode: "0750"
+      loop:
+        - "/var/wp/src"
+        - "{{ wordpress_workdir }}"
 
     - name: "Template all the required configuration files"
       ansible.builtin.template:
@@ -69,11 +83,19 @@
         mode: "0640"
       loop:
         - src: "{{ playbook_dir }}/templates/wp-config.php.j2"
-          dest: "{{ wordpress_workdir }}/wp-config.php"
+          dest: "/var/wp/src/wp-config.php"
         - src: "{{ playbook_dir }}/templates/apache2.conf.j2"
           dest: "/etc/apache2/apache2.conf"
         - src: "{{ playbook_dir }}/templates/php.ini.j2"
           dest: "/etc/php/8.2/apache2/conf.d/php.ini"
+
+    - name: "Inject entrypoint script"
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/templates/entrypoint.sh"
+        dest: "/bin/entrypoint.sh"
+        owner: "www-data"
+        group: "www-data"
+        mode: "755"
 
     - name: "Create required folders and ensure correct permission"
       ansible.builtin.file:

@@ -7,11 +7,25 @@ packer {
       version = ">= 1.0.8"
       source  = "github.com/hashicorp/docker"
     }
+    amazon = {
+      source  = "github.com/hashicorp/amazon"
+      version = "~> 1"
+    }
   }
 }
 
 variable "tag" {
   type = string
+}
+
+variable "repository_url" {
+  type        = string
+  description = "The image repository to use, it includes the image name"
+}
+
+variable "registry_url" {
+  type        = string
+  description = "A valid aws ect url for pushing your image"
 }
 
 // source a container
@@ -36,51 +50,19 @@ build {
 
     inline = [
       "echo 1>&2 Adding file to container",
-      "echo \"Hello $NAME\" > hello.txt",
-      "mkdir -p /app",
-    ]
-  }
-
-  provisioner "file" {
-    source      = "./ci/build.sh"
-    destination = "/app/build.sh"
-  }
-
-  post-processor "docker-tag" {
-    repository = "packer-hello-world"
-    tags       = [var.tag]
-  }
-}
-
-// source a container
-source "docker" "hello-world" {
-  image  = "packer-hello-world:${var.tag}"
-  pull   = false
-  commit = true
-  changes = [
-    "ENTRYPOINT ${jsonencode(["/bin/bash", "-c"])}"
-  ]
-}
-
-build {
-  name = "second-world"
-  sources = [
-    "source.docker.hello-world"
-  ]
-
-  provisioner "shell" {
-    environment_vars = [
-      "NAME=toto",
-    ]
-
-    inline = [
-      "echo 1>&2 Adding file to container",
       "echo \"Hello tutitu\" >> hello.txt",
     ]
   }
 
-  post-processor "docker-tag" {
-    repository = "packer-second-world"
-    tags       = [var.tag]
+  post-processors {
+    post-processor "docker-tag" {
+      repository = var.repository_url
+      tags       = [var.tag]
+    }
+
+    post-processor "docker-push" {
+      ecr_login    = true
+      login_server = var.registry_url
+    }
   }
 }

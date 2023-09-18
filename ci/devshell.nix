@@ -7,10 +7,12 @@ pkgs.mkShell {
       nixpkgs-fmt
       statix
 
-      # -- Tools
-      _1password# Secret management with 1password
+      ncurses# for tput
 
+      # -- Tools
       ansible# to get easy access to ansible-doc cli
+      coreutils
+      docker
       ;
 
     inherit (unstable)
@@ -19,6 +21,8 @@ pkgs.mkShell {
       packer
 
       entr# for automatic save > execute feedback loop
+
+      awscli2
       ;
   };
 
