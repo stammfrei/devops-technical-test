@@ -131,7 +131,10 @@ resource "aws_ecs_task_definition" "wordpress" {
           value = aws_db_instance.wordpress.address
         },
         { name  = "WP_INIT_FOLDER"
-          value = "false"
+          value = "${tostring(var.wp_folder_reset)}"
+        },
+        { name  = "WP_RESET_CONFIG"
+          value = "${tostring(var.wp_config_reset)}"
         },
       ]
 

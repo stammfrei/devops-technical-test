@@ -63,6 +63,18 @@ variable "db_password" {
   sensitive   = true
 }
 
+variable "wp_folder_reset" {
+  type        = bool
+  description = "This variable enable a full wipe and reset of the wordpress folder"
+  default     = true
+}
+
+variable "wp_config_reset" {
+  type        = bool
+  description = "This variable enable a full wipe and reset of the wp-config file"
+  default     = false
+}
+
 locals {
   container_name = "wordpress"
 }
