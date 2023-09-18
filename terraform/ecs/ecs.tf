@@ -130,6 +130,9 @@ resource "aws_ecs_task_definition" "wordpress" {
         { name  = "WP_DB_HOST"
           value = aws_db_instance.wordpress.address
         },
+        { name  = "WP_INIT_FOLDER"
+          value = "false"
+        },
       ]
 
       portMappings = [
@@ -154,8 +157,8 @@ resource "aws_ecs_task_definition" "wordpress" {
   volume {
     name = "wp-content"
     efs_volume_configuration {
-      file_system_id = aws_efs_file_system.wp_content.id
-      //root_directory          = "/var/www/html"
+      file_system_id          = aws_efs_file_system.wp_content.id
+      root_directory          = "/"
       transit_encryption      = "ENABLED"
       transit_encryption_port = 2999
 
@@ -173,11 +176,27 @@ resource "aws_efs_file_system" "wp_content" {
   }
 }
 
+resource "aws_efs_mount_target" "wp_content" {
+  file_system_id  = aws_efs_file_system.wp_content.id
+  subnet_id       = aws_subnet.wordpress_main_subnet.id
+  security_groups = [aws_security_group.ecs_wordpress.id]
+}
+
 resource "aws_efs_access_point" "wp_content" {
   file_system_id = aws_efs_file_system.wp_content.id
 
+  root_directory {
+    path = "/wp-content"
+
+    creation_info {
+      owner_uid   = "33"
+      owner_gid   = "33"
+      permissions = "0777"
+    }
+  }
+
   posix_user {
-    uid = "33" // www-data uid
+    uid = "33"
     gid = "33"
   }
 }
@@ -188,6 +207,9 @@ resource "aws_ecs_service" "wordpress" {
   task_definition = aws_ecs_task_definition.wordpress.arn
   desired_count   = 1
 
+  force_new_deployment   = true
+  enable_execute_command = true
+
   launch_type = "FARGATE"
 
   load_balancer {
@@ -196,15 +218,12 @@ resource "aws_ecs_service" "wordpress" {
     target_group_arn = aws_lb_target_group.wordpress.arn
   }
 
-  force_new_deployment   = true
-  enable_execute_command = true
-
   network_configuration {
     security_groups = [aws_security_group.ecs_wordpress.id]
     subnets = [
       aws_subnet.wordpress_main_subnet.id,
       aws_subnet.wordpress_secondary_subnet.id,
     ]
-    assign_public_ip = true
+    assign_public_ip = true // it seems required to pull from ecr, wtf ?
   }
 }
