@@ -56,8 +56,10 @@ resource "aws_security_group" "ecs_wordpress" {
   description = "Manage firewall rules for wordpresss"
   vpc_id      = aws_vpc.ecs_wordpress.id
 
-
-  ingress { // open bar while we test things
+  // open bar while we test things
+  // sadly I wasn't able to find out all the network rules in due time, EFS
+  // get some connection error but I don't know yet which port it uses
+  ingress {
     description = "Allow all incoming HTTP traffic"
     from_port   = 0
     to_port     = 0
@@ -101,6 +103,16 @@ resource "aws_security_group" "ecs_wordpress" {
   }
 
   ingress {
+    description = "Accept EFS mount ports inside VPC"
+    from_port   = 2049
+    to_port     = 2049
+    protocol    = "tcp"
+    cidr_blocks = [
+      aws_vpc.ecs_wordpress.cidr_block,
+    ]
+  }
+
+  ingress {
     description = "Accept WP HTTP port inside VPC"
     from_port   = 8080
     to_port     = 8080
@@ -134,11 +146,6 @@ resource "aws_security_group" "ecs_wordpress" {
   }
 }
 
-resource "aws_s3_bucket" "wordpress_logs_lb" {
-  bucket        = "wordpress-lb-logs-${var.environment}"
-  force_destroy = true
-}
-
 resource "aws_lb" "wordpress_http" {
   name               = "wordpress-lb-${var.environment}"
   internal           = false
@@ -151,12 +158,6 @@ resource "aws_lb" "wordpress_http" {
   ]
 
   enable_deletion_protection = false
-
-  // access_logs {
-  //   bucket  = aws_s3_bucket.wordpress_logs_lb.id
-  //   prefix  = "wordpress-lb-${var.environment}"
-  //   enabled = true
-  // }
 }
 
 resource "aws_lb_target_group" "wordpress" {
@@ -176,8 +177,6 @@ resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.wordpress_http.arn
   port              = "80"
   protocol          = "HTTP"
-  // ssl_policy        = "ELBSecurityPolicy-2016-08"
-  // certificate_arn   = "arn:aws:iam::187416307283:server-certificate/test_cert_rab3wuqwgja25ct3n4jdj2tzu4"
 
   default_action {
     type             = "forward"
