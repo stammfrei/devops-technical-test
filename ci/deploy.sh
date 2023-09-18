@@ -27,8 +27,7 @@ function deploy-registry() {
 function deploy-ecs-cluster() {
 	requires terraform
 
-	TF_AUTO_APPROVE=${TF_AUTO_APPROVE:-"false"}
-	if [ "$TF_AUTO_APPROVE" == "true" ]; then
+	if [ "${TF_AUTO_APPROVE:-"false"}" == "true" ]; then
 		auto_approve="-auto-approve"
 	fi
 
@@ -74,11 +73,22 @@ function build-push-image() {
 	packer build -only="wordpress.docker.base-ansible" "$packer_folder"
 }
 
-function main() {
-	# TF_AUTO_APPROVE="true" deploy-registry
-	# export SKIP_BASE="true"
-	# build-push-image
-	TF_AUTO_APPROVE="true" deploy-ecs-cluster
+function full-deploy() {
+	deploy-registry
+	build-push-image
+	deploy-ecs-cluster
+}
+
+function destroy() {
+	if [ "${TF_AUTO_APPROVE:-"false"}" == "true" ]; then
+		auto_approve="-auto-approve"
+	fi
+
+	log i "Destroy ecs cluster and rds"
+	terraform -chdir=terraform/ecs destroy "${auto_approve:-}"
+
+	log i "Destroy registry"
+	terraform -chdir=terraform/registry destroy "${auto_approve:-}"
 }
 
 # --- utils
