@@ -120,6 +120,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 	-h | --help)
 		echo "# Requirements"
 		echo "----------"
+		echo
 		echo "See README.md for setup instructions"
 		echo
 		echo "# Environment variables"
@@ -127,9 +128,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 		echo
 		echo "See README.md for secrets."
 		echo
-		echo "TF_AUTO_APPROVE # Make terraform deploy changes automatically"
+		echo "TF_AUTO_APPROVE=\"true\" # Make terraform deploy changes automatically"
 		echo
-		echo "SKIP_STEP       # Skip the first packer build state (the ansible container)"
+		echo "SKIP_STEP=\"true\"       # Skip the first packer build state (the ansible container)"
 		echo
 		echo "# Commands"
 		echo "----------"
