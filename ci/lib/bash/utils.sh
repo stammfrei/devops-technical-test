@@ -14,6 +14,7 @@ if [[ "$(tput colors)" -gt 8 ]]; then
 	_color_reset=$(tput sgr0)
 	export _color_reset
 else
+	export _color_green=""
 	export _color_yellow=""
 	export _color_red=""
 	export _color_blue=""

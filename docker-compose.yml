@@ -1,0 +1,36 @@
+---
+version: '3.8'
+services:
+  nix-shell:
+    image: "nixos/nix"
+    tty: true
+    working_dir: "/repo"
+    privileged: true # We need docker for packer build
+    entrypoint:
+      - "/root/.nix-profile/bin/nix"
+      - "develop"
+      - --extra-experimental-features
+      - "nix-command flakes"
+      - "--command"
+    command: "bash"
+    environment:
+      - AWS_ACCESS_KEY
+      - AWS_SECRET_KEY
+      - AWS_DEFAULT_REGION
+      - TF_VAR_db_password
+      - TF_VAR_db_username
+      - TF_AUTO_APPROVE=false
+      - SKIP_STEP=false
+    volumes:
+      - type: "bind"
+        source: "${PWD}"
+        target: "/repo"
+      - type: "volume" # Add a volume for the nix store to cache it, you can delete safely
+        source: "nix-store"
+        target: "/nix"
+      - type: "bind" # we need docker for packer 
+        source: "/var/run/docker.sock"
+        target: "/var/run/docker.sock"
+
+volumes:
+  nix-store:

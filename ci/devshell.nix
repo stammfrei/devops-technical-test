@@ -7,8 +7,12 @@ pkgs.mkShell {
       nixpkgs-fmt
       statix
 
+      ncurses# for tput
+
       # -- Tools
       ansible# to get easy access to ansible-doc cli
+      coreutils
+      docker
       ;
 
     inherit (unstable)
