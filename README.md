@@ -73,7 +73,7 @@ nix develop --extra-experimental-features "nix-command flakes"
 docker compose run --rm nix-shell <command>
 ```
 
-> First startup will be slow and it's normal, nix will fetch all the packages
+> First startup will be slow and it's normal, nix will fetch all the required packages
 > before giving you a prompt.
 
 
@@ -208,8 +208,8 @@ Dockerfile to iterate faster to my desired config.
   I used back at Leocare) but I got some weird error messages using fpm so I
   fallbacked to apache2.
 
-- I created a working wordpress container using apache2 and dockerfile and tested
-  it with `docker compose`.
+- I created a working wordpress container using apache2 and dockerfile (to iterate faster)
+  and tested it with `docker compose`.
 
 - I wanted to be able to configure the container using env vars so I modified the
   [wp-config.php](./packer/ansible/templates/wp-config.php.j2).
@@ -251,13 +251,17 @@ container wasn't copied to the volume.
 So I changed the entrypoint to be able to init the wordpress folder from an env
 var.
 
+There is still some weird permissions issues with EFS, but I ran out of time to
+troubleshoot it.
+
 #### Wrapping up whole pipeline
 
 To iterate faster I coded the terraform manifest on the way. I took a bit of 
 time at the end to clean up the code a bit.
 
 This repo is far from being production ready but it should allow you to spawn
-a wordpress container working on HTTP Port.
+a wordpress container working on HTTP Port. But there is still a lot of work
+to make this module usable.
 
 As requested, there are no DNS management, so I didn't address TLS either. But 
 it should be a pre-requisite before pushing this to production.
@@ -276,9 +280,11 @@ I inject all the secrets via environment variables, the required ones are in the
 [.env](./.env) file. I use [1password](https://1password.com/) as my secret manager
 so I used `op run` to execute my scripts with the env var provisionned.
 
+Feel free to ask me about nix if you want to know how it works :)
+
 ### What component interact with each others ?
 
-At top level we got an aws region that contains :
+At top level we got an aws region (Datacenter group) that contains :
 
 #### Networking
 
