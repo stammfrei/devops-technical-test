@@ -113,6 +113,16 @@ resource "aws_security_group" "ecs_wordpress" {
   }
 
   ingress {
+    description = "Allow ssh inside the subnet" //  for EFS ? 
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [
+      aws_vpc.ecs_wordpress.cidr_block,
+    ]
+  }
+
+  ingress {
     description = "Accept WP HTTP port inside VPC"
     from_port   = 8080
     to_port     = 8080
