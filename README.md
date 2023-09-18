@@ -40,9 +40,12 @@ Just tell us in the README file how you would have done this.
 Links :
 - [Getting started with ECS](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/get-set-up-for-amazon-ecs.html)
 
+1. Follow the steps to generate an administrator account
+2. Generate an access key see [managing access keys for IAM users](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html)
+
 #### Get the dependencies
 
-You can use either [docker](https://www.docker.com/) or [nix](https://nixos.org/).
+You can use either [nix](https://nixos.org/) or [docker](https://www.docker.com/).
 
 ##### Via nix 
 
@@ -82,18 +85,43 @@ docker compose run --rm nix-shell <command>
 The secrets must be provisioned via env vars, you need to provision :
 
 ```bash
+# AWS credentials
 AWS_ACCESS_KEY
 AWS_SECRET_KEY
 AWS_DEFAULT_REGION
+
+# DB username and password
 TF_VAR_db_username
 TF_VAR_db_password
 ```
 
-4. Configure the tf backend
+4. Configure the tf backend and initialize terraform
 
-Either use the local backend or you can use [s3](https://aws.amazon.com/s3/), see
+For this project I used the [s3](https://aws.amazon.com/s3/) backend, see
 the [registry](./registry.s3.tfbackend) and [ecs](./ecs.s3.tfbackend) example files
 and the [terraform docs](https://developer.hashicorp.com/terraform/language/settings/backends/s3).
+
+If you want to use another backend, you must change the `backend "s3" {}` setting
+from the [./terraform/registry/registry.tf](./terraform/registry/registry.tf) and
+the [./terraform/ecs/main.tf](./terraform/ecs/main.tf) files before making the
+`terraform init`.
+
+Once your backend is configured, use `terraform init` to fetch the providers and
+create the state file :
+
+> Note: Be careful if you use `terraform -chdir=<folder>`, the `-backend-config`
+> argument will be relative to the `-chdir` folder.
+
+- Using nix
+```bash
+nix develop --extra-experimental-features "nix-command flakes"
+terraform -chdir=terraform/registry init -backend-config <path to backend config>
+```
+
+- Using docker :
+```bash
+docker compose run --rm nix-shell terraform -chdir=terraform/registry init -backend-config <path to backend config>
+```
 
 5. Execute the deploy script :
 
@@ -107,7 +135,7 @@ nix develop --extra-experimental-features "nix-command flakes"
 
 - Using docker :
 ```bash
-docker compose run --rm nix-shell ./ci/deploy.sh
+docker compose run --rm nix-shell ./ci/deploy.sh full-deploy
 ```
 
 > If you do not want interactive appoval in terraform, set the `TF_AUTO_APPROVE`
@@ -129,7 +157,22 @@ nix develop --extra-experimental-features "nix-command flakes"
 
 - Using docker :
 ```bash
-docker compose run --rm nix-shell destroy
+docker compose run --rm nix-shell ./ci/deploy.sh destroy
+```
+
+#### Projects commands
+
+To get a list of project commands, use the `-h` flag :
+
+- Using nix
+```bash
+nix develop --extra-experimental-features "nix-command flakes"
+./ci/deploy.sh -h
+```
+
+- Using docker :
+```bash
+docker compose run --rm nix-shell ./ci/deploy.sh -h
 ```
 
 ---

@@ -120,10 +120,32 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 	-h | --help)
 		echo "# Requirements"
 		echo "----------"
-		echo "- terraform must be installed on your machine"
+		echo "See README.md for setup instructions"
+		echo
+		echo "# Environment variables"
+		echo "----------"
+		echo
+		echo "See README.md for secrets."
+		echo
+		echo "TF_AUTO_APPROVE # Make terraform deploy changes automatically"
+		echo
+		echo "SKIP_STEP       # Skip the first packer build state (the ansible container)"
 		echo
 		echo "# Commands"
 		echo "----------"
+		echo
+		echo "# Deploy the ECR registry with terraform"
+		echo "$0 deploy-registry"
+		echo
+		echo "# Build and push the wordpress image"
+		echo "$0 build-and-push"
+		echo
+		echo "# Deploy the ECS cluster"
+		echo "$0 deploy-ecs-cluster"
+		echo
+		echo "# Start the full build and deploy pipeline"
+		echo "$0 full-deploy"
+		echo
 		;;
 
 	*)
