@@ -1,0 +1,3 @@
+bucket = "stammfrei-tf-states"
+key = "devops-technical-test/registry"
+
