@@ -233,8 +233,6 @@ I inject all the secrets via environment variables, the required ones are in the
 [.env](./.env) file. I use [1password](https://1password.com/) as my secret manager
 so I used `op run` to execute my scripts with the env var provisionned.
 
-TODO: Provide a container image to run the project.
-
 ### What component interact with each others ?
 
 At top level we got an aws region that contains :
