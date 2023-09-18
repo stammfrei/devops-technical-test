@@ -56,47 +56,67 @@ resource "aws_security_group" "ecs_wordpress" {
   description = "Manage firewall rules for wordpresss"
   vpc_id      = aws_vpc.ecs_wordpress.id
 
+
+  ingress { // open bar while we test things
+    description = "Allow all incoming HTTP traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = -1
+    cidr_blocks = [
+      aws_vpc.ecs_wordpress.cidr_block,
+      "0.0.0.0/0"
+    ]
+  }
+
   ingress {
-    description = "Accept HTTP to VPC"
+    description = "Allow all incoming HTTP traffic"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = [
       aws_vpc.ecs_wordpress.cidr_block,
-      "0.0.0.0/0",
-    ]
-  }
-
-  ingress { // for test purposes
-    description = "Accept HTTP to VPC"
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = [
-      aws_vpc.ecs_wordpress.cidr_block,
-      "0.0.0.0/0",
-    ]
-  }
-
-  ingress { // for test purposes
-    description = "Accept HTTP to VPC"
-    from_port   = 3306
-    to_port     = 3306
-    protocol    = "tcp"
-    cidr_blocks = [
-      aws_vpc.ecs_wordpress.cidr_block,
-      "0.0.0.0/0",
+      "0.0.0.0/0"
     ]
   }
 
   ingress {
-    description = "Accept HTTPS to VPC"
+    description = "Accept inbound HTTPS traffic"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = [
       aws_vpc.ecs_wordpress.cidr_block,
-      "0.0.0.0/0",
+      "0.0.0.0/0"
+    ]
+  }
+
+  ingress {
+    description = "Accept EFS mount ports inside VPC"
+    from_port   = 2999
+    to_port     = 2999
+    protocol    = "tcp"
+    cidr_blocks = [
+      aws_vpc.ecs_wordpress.cidr_block,
+    ]
+  }
+
+  ingress {
+    description = "Accept WP HTTP port inside VPC"
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = [
+      aws_vpc.ecs_wordpress.cidr_block,
+    ]
+  }
+
+  ingress {
+    description = "Accept mysql port inside VPC"
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = [
+      aws_vpc.ecs_wordpress.cidr_block,
     ]
   }
 
@@ -145,6 +165,11 @@ resource "aws_lb_target_group" "wordpress" {
   protocol    = "HTTP"
   vpc_id      = aws_vpc.ecs_wordpress.id
   target_type = "ip"
+
+  health_check {
+    enabled = true
+    path    = "/healthcheck.html"
+  }
 }
 
 resource "aws_lb_listener" "http" {
