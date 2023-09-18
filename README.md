@@ -443,6 +443,7 @@ My primary concern would be security, so we need to implement :
 
 - TLS
 - Backups with automated restore tests.
+- Proper secrets management (probably lookup a solution integrated in AWS)
 - Skinned down IAM policies
 - Precise firwall rules
 - Add a WAF upfront
