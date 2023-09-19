@@ -40,6 +40,7 @@
       packages.${system} = {
         base = import ./nix/base.nix { inherit pkgs; };
         wordpress-container = import ./nix/wordpress-container.nix { inherit pkgs unstable; };
+        wordpress-fpm-container = import ./nix/wordpress-fpm-container.nix { inherit pkgs unstable; };
       };
 
       devShell.${system} = import ./ci/devshell.nix { inherit unstable pkgs; };
