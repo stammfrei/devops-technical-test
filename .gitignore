@@ -1,1 +1,3 @@
 .direnv
+terraform/ecs/.terraform
+terraform/registry/.terraform

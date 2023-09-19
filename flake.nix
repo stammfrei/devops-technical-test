@@ -4,7 +4,7 @@
   inputs = {
     # I fetch stable and unstable
     # The unstable repo allow me to get more up-to-date tools
-    nixpkgs = { url = "github:NixOS/nixpkgs/release-22.05"; };
+    nixpkgs = { url = "github:NixOS/nixpkgs/release-23.05"; };
     nixpkgs-unstable.url = "github:NixOs/nixpkgs/nixos-unstable";
     # Generate vms|iso|more from nixos confs
     nixos-generators = {
@@ -37,7 +37,11 @@
 
     in
     {
-      packages.${system} = { };
+      packages.${system} = {
+        base = import ./nix/base.nix { inherit pkgs; };
+        wordpress-container = import ./nix/wordpress-container.nix { inherit pkgs unstable; };
+      };
+
       devShell.${system} = import ./ci/devshell.nix { inherit unstable pkgs; };
     };
 }
